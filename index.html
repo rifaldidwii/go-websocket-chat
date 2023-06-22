@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+
+    <style>
+        html {
+            overflow: hidden;
+        }
+
+        body {
+            overflow: hidden;
+            padding: 0;
+            margin: 0;
+            width: 100%;
+            height: 100%;
+            background: gray;
+        }
+
+        #log {
+            background: white;
+            margin: 0;
+            padding: 0.5em 0.5em 0.5em 0.5em;
+            position: absolute;
+            top: 0.5em;
+            left: 0.5em;
+            right: 0.5em;
+            bottom: 3em;
+            overflow: auto;
+        }
+
+        #form {
+            padding: 0 0.5em 0 0.5em;
+            margin: 0;
+            position: absolute;
+            bottom: 1em;
+            left: 0px;
+            width: 100%;
+            overflow: hidden;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="log"></div>
+    <form id="form">
+        <input type="submit" value="Send" />
+        <input type="text" id="msg" size="64" autofocus autocomplete="off" />
+    </form>
+
+    <script>
+        const name = prompt('Enter your name please:') || "No name"
+
+        const socket = new WebSocket(`ws://127.0.0.1:3000/ws?username=${name}`)
+
+        let msg = document.getElementById("msg")
+        let log = document.getElementById("log")
+        let form = document.getElementById("form")
+
+        function appendLog(item) {
+            let doScroll = log.scrollTop > log.scrollHeight - log.clientHeight - 1;
+            log.appendChild(item);
+            if (doScroll) {
+                log.scrollTop = log.scrollHeight - log.clientHeight;
+            }
+        }
+
+        form.onsubmit = event => {
+            event.preventDefault()
+            socket.send(msg.value)
+            msg.value = ''
+        }
+
+        console.log("Attempting connection");
+
+        socket.onopen = () => {
+            console.log("Succesfully connected")
+        }
+
+        socket.onmessage = event => {
+            let res = JSON.parse(event.data)
+
+            let item = document.createElement("div");
+            item.innerHTML = `<b>${res.From}: </b> ${res.Message}`;
+
+            appendLog(item);
+        }
+
+        socket.onclose = event => {
+            var item = document.createElement("div")
+            item.innerHTML = "<b>Connection closed.</b>"
+            appendLog(item)
+        }
+
+        socket.onerror = error => {
+            var item = document.createElement("div")
+            item.innerHTML = `<b>${error}</b>`
+            appendLog(item)
+        }
+    </script>
+</body>
+
+</html>
